@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ALL_SCHEMES } from './constants';
+import { ALL_SCHEMES, findSchemeById } from './constants.js';
 
 const client = axios.create({
   baseURL: '/api',
@@ -9,8 +9,34 @@ const client = axios.create({
   },
 });
 
+// Interceptor to detect and reject HTML responses (which happen when Vercel rewrites /api/* to index.html)
+client.interceptors.response.use(
+  (response) => {
+    // If response is a string and contains HTML markup instead of valid JSON, reject with error
+    const isHtml =
+      typeof response.data === 'string' &&
+      (response.data.trim().toLowerCase().startsWith('<!doctype html') ||
+       response.data.trim().toLowerCase().startsWith('<html') ||
+       response.headers?.['content-type']?.includes('text/html'));
+
+    if (isHtml) {
+      const err = new Error('Vercel SPA rewrite returned HTML index instead of JSON API response');
+      err.isHtmlRewrite = true;
+      return Promise.reject(err);
+    }
+
+    if (response.data === undefined || response.data === null) {
+      const err = new Error('Empty response received from API');
+      return Promise.reject(err);
+    }
+
+    return response;
+  },
+  (error) => Promise.reject(error)
+);
+
 /**
- * Intelligent client-side fallback matching algorithm in case backend API is not yet running
+ * High-precision local matching engine: Evaluates any entrepreneur profile against all schemes
  */
 function calculateLocalMatches(profile) {
   const {
@@ -21,91 +47,119 @@ function calculateLocalMatches(profile) {
     isExistingBusiness = false,
     annualIncome = 250000,
     fundingNeeded = 500000,
-    education = '10th_pass'
+    education = '10th_pass',
+    age = 30
   } = profile;
 
   return ALL_SCHEMES.map(scheme => {
-    let score = 65; // base score
+    let score = 60; // base score
     let reasons = [];
+    const crit = scheme.eligibilityCriteria || {};
 
-    // Category matching
+    // 1. Social Category & Affirmative Action
     if (scheme.id === 'stand-up-india') {
       if (category === 'SC' || category === 'ST' || gender === 'Female' || specialCategories.includes('woman')) {
-        score += 30;
-        reasons.push('Directly prioritizes SC/ST & Women entrepreneurs');
+        score += 32;
+        reasons.push('Prioritizes SC, ST, and Women greenfield entrepreneurs (loans ₹10L - ₹1Cr)');
       } else {
         score -= 40;
       }
-    } else if (scheme.id === 'nsfdc-term-loan') {
-      if (category === 'SC') {
-        score += 32;
-        reasons.push('Exclusive concessional loan for Scheduled Caste founders');
+    } else if (scheme.id === 'nssh-scheme' || scheme.id === 'nsfdc-term-loan') {
+      if (category === 'SC' || category === 'ST') {
+        score += 35;
+        reasons.push('Exclusive concessional funding & procurement benefits for SC/ST founders');
       } else {
         score -= 50;
       }
-    } else if (scheme.id === 'trifed-van-dhan') {
+    } else if (scheme.id === 'pm-egp-tribal' || scheme.id === 'trifed-van-dhan') {
       if (category === 'ST') {
-        score += 32;
-        reasons.push('Designed for Scheduled Tribe forest & agro entrepreneurs');
+        score += 34;
+        reasons.push('Specialized mission for Scheduled Tribe forest, agro & artisan clusters');
       } else {
-        score -= 50;
+        score -= 45;
       }
-    } else if (scheme.id === 'lakhpati-didi') {
+    } else if (scheme.id === 'lakhpati-didi' || scheme.id === 'udyam-sakhi' || scheme.id === 'mahila-coir-yojana' || scheme.id === 'rashtriya-mahila-kosh') {
       if (gender === 'Female' || specialCategories.includes('woman')) {
         score += 32;
-        reasons.push('Specialized mission for women-led rural micro-enterprises');
+        reasons.push('Dedicated national initiative for women-led micro-enterprises & SHGs');
       } else {
         score -= 35;
       }
     } else if (scheme.id === 'nhfdc-divyang') {
       if (specialCategories.includes('pwd')) {
-        score += 34;
-        reasons.push('Special concessional scheme for Differently Abled individuals');
+        score += 36;
+        reasons.push('Concessional loan & grant for Differently Abled entrepreneurs');
       } else {
         score -= 45;
       }
     } else if (scheme.id === 'pm-svanidhi') {
-      if (businessType === 'StreetVendor' || businessType === 'Retail') {
-        score += 30;
-        reasons.push('Tailored specifically for street vendors and small retailers');
+      if (businessType === 'StreetVendor' || businessType === 'Retail' || businessType === 'street_vendor') {
+        score += 34;
+        reasons.push('Tailored specifically for street vendors & small hawkers with 7% interest subsidy');
       }
     } else if (scheme.id === 'pm-vishwakarma') {
       if (specialCategories.includes('artisan') || businessType === 'Handicrafts' || businessType === 'Manufacturing') {
-        score += 30;
-        reasons.push('Full toolkits & loans for traditional craftspeople & artisans');
+        score += 34;
+        reasons.push('Toolkits (₹15,000) & 5% interest loans for traditional craftspeople & artisans');
       }
     } else if (scheme.id === 'pmegp') {
-      score += 20;
+      score += 22;
       if (category !== 'General' || gender === 'Female' || specialCategories.includes('rural')) {
-        score += 12;
-        reasons.push('Eligible for higher 35% margin money subsidy');
+        score += 14;
+        reasons.push('Eligible for maximum 35% capital subsidy margin money grant');
+      } else {
+        reasons.push('Eligible for up to 25% capital margin money subsidy');
       }
-    } else if (scheme.id === 'pm-mudra') {
-      score += 25;
-      reasons.push('Zero collateral working capital loan across all MSME sectors');
+    } else if (scheme.id === 'pm-mudra' || scheme.id === 'mudra-yojana') {
+      score += 26;
+      reasons.push('Zero collateral working capital loan up to ₹20 Lakhs across 3 tranches');
+    } else if (scheme.id === 'pm-fme' || scheme.id === 'pmfme') {
+      if (businessType === 'FoodProcessing' || businessType === 'AgriBusiness') {
+        score += 30;
+        reasons.push('35% capital subsidy (up to ₹10 Lakhs) for micro food processing enterprises');
+      }
+    } else if (scheme.id === 'cgtmse') {
+      score += 20;
+      reasons.push('Credit guarantee coverage up to ₹5 Crore with zero third-party collateral');
     }
 
-    // Business type synergy
-    if (scheme.eligibilityCriteria?.businessTypes?.includes(businessType)) {
+    // 2. Business Type Synergy
+    if (crit.businessTypes && crit.businessTypes.length > 0) {
+      const matchBT = crit.businessTypes.some(bt =>
+        bt.toLowerCase() === businessType.toLowerCase() ||
+        bt.toLowerCase().includes(businessType.toLowerCase()) ||
+        businessType.toLowerCase().includes(bt.toLowerCase())
+      );
+      if (matchBT) {
+        score += 8;
+      }
+    }
+
+    // 3. Special Categories
+    if (specialCategories.includes('rural') && (crit.location?.includes('Rural') || scheme.targetAudience?.includes('Rural'))) {
       score += 8;
+      reasons.push('Rural enterprise location incentive applied');
     }
 
-    // Funding needed compatibility
+    // 4. Funding Needed compatibility
     if (fundingNeeded <= scheme.maxBenefitNumeric) {
-      score += 5;
+      score += 6;
     }
 
-    // Existing vs new business compatibility
-    if (isExistingBusiness && (scheme.id === 'pm-mudra' || scheme.id === 'cgtmse' || scheme.id === 'pmfme')) {
-      score += 5;
-      reasons.push('Strongly supports existing enterprise scaling and equipment upgrade');
+    // 5. Existing vs Greenfield compatibility
+    if (isExistingBusiness && (scheme.id === 'pmegp-second-loan' || scheme.id === 'cgtmse' || scheme.id === 'mudra-yojana')) {
+      score += 8;
+      reasons.push('Strongly supports scaling & equipment expansion of existing business');
+    } else if (!isExistingBusiness && (scheme.id === 'stand-up-india' || scheme.id === 'startup-india-seed-fund')) {
+      score += 6;
+      reasons.push('Optimized for greenfield startup establishment');
     }
 
-    const finalScore = Math.min(98, Math.max(25, score));
+    const finalScore = Math.min(98, Math.max(28, score));
     return {
       ...scheme,
       matchScore: finalScore,
-      matchReasons: reasons.length ? reasons : ['General enterprise assistance criteria matched']
+      matchReasons: reasons.length > 0 ? reasons : ['General micro-enterprise criteria met based on profile']
     };
   }).sort((a, b) => b.matchScore - a.matchScore);
 }
@@ -115,10 +169,12 @@ export const api = {
   async matchSchemes(profileData) {
     try {
       const response = await client.post('/schemes/match', profileData);
-      return response.data;
+      if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+        return response.data;
+      }
+      throw new Error('Invalid match response format');
     } catch (err) {
       console.warn('Backend /schemes/match unavailable, using intelligent local engine:', err.message);
-      // Return local match computation
       const matched = calculateLocalMatches(profileData);
       return {
         success: true,
@@ -133,18 +189,22 @@ export const api = {
   async getSchemes(params = {}) {
     try {
       const response = await client.get('/schemes', { params });
-      return response.data;
+      if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+        return response.data;
+      }
+      throw new Error('Invalid schemes response format');
     } catch (err) {
       console.warn('Backend /schemes unavailable, using local registry:', err.message);
       let list = [...ALL_SCHEMES];
 
       if (params.search) {
         const q = params.search.toLowerCase();
-        list = list.filter(s => 
+        list = list.filter(s =>
           s.name.toLowerCase().includes(q) ||
           (s.nameHi && s.nameHi.includes(q)) ||
           s.ministry.toLowerCase().includes(q) ||
-          s.description.toLowerCase().includes(q)
+          s.description.toLowerCase().includes(q) ||
+          (s.targetAudience && s.targetAudience.toLowerCase().includes(q))
         );
       }
 
@@ -168,14 +228,23 @@ export const api = {
   async getSchemeById(id) {
     try {
       const response = await client.get(`/schemes/${id}`);
+      if (
+        !response.data ||
+        typeof response.data !== 'object' ||
+        typeof response.data === 'string' ||
+        !response.data.success ||
+        !response.data.data
+      ) {
+        throw new Error('Invalid scheme payload from API');
+      }
       return response.data;
     } catch (err) {
-      console.warn(`Backend /schemes/${id} unavailable, retrieving from local registry:`, err.message);
-      const scheme = ALL_SCHEMES.find(s => s.id === id);
+      console.warn(`Backend /schemes/${id} unavailable (${err.message}), retrieving from local registry`);
+      const scheme = findSchemeById(id);
       if (scheme) {
         return { success: true, data: scheme };
       }
-      throw new Error('Scheme not found');
+      throw new Error(`Scheme '${id}' not found in registry`);
     }
   },
 
@@ -183,17 +252,21 @@ export const api = {
   async searchSchemes(query) {
     try {
       const response = await client.get('/schemes/search', { params: { q: query } });
-      return response.data;
+      if (response.data && typeof response.data === 'object' && Array.isArray(response.data.data)) {
+        return response.data;
+      }
+      throw new Error('Invalid search response');
     } catch (err) {
       console.warn('Backend /schemes/search unavailable, performing local search:', err.message);
-      const q = (query || '').toLowerCase();
+      const q = (query || '').toLowerCase().trim();
       const results = ALL_SCHEMES.filter(s =>
         s.name.toLowerCase().includes(q) ||
         (s.nameHi && s.nameHi.includes(q)) ||
         s.description.toLowerCase().includes(q) ||
-        s.ministry.toLowerCase().includes(q)
+        s.ministry.toLowerCase().includes(q) ||
+        (s.targetAudience && s.targetAudience.toLowerCase().includes(q))
       );
-      return { success: true, data: results };
+      return { success: true, count: results.length, data: results };
     }
   },
 
@@ -201,27 +274,30 @@ export const api = {
   async chatWithAssistant(message, language = 'en', history = []) {
     try {
       const response = await client.post('/assistant/chat', { message, language, history });
-      const data = response.data || {};
-      const answer = data.reply || data.response || data.message || "Namaste! I am here to assist your enterprise with government schemes.";
-      return {
-        ...data,
-        reply: answer,
-        response: answer
-      };
+      if (response.data && typeof response.data === 'object' && (response.data.reply || response.data.response)) {
+        const data = response.data;
+        const answer = data.reply || data.response || data.message;
+        return {
+          ...data,
+          reply: answer,
+          response: answer
+        };
+      }
+      throw new Error('Invalid assistant response');
     } catch (err) {
       console.warn('Backend /assistant/chat unavailable, using intelligent assistant responses:', err.message);
-      
-      const q = message.toLowerCase();
+
+      const q = (message || '').toLowerCase();
       let replyEn = "";
       let replyHi = "";
       let suggestedSchemes = [];
       let quickReplies = [];
 
-      if (['hy', 'hello', 'hi', 'hey', 'namaste'].some(w => q === w || q.startsWith(w + ' '))) {
-        replyEn = "Namaste! 🙏 Welcome to Vyapar Mitra AI. I can guide you on collateral-free loans (MUDRA, PM SVANidhi), up to 35% capital subsidies (PMEGP), affirmative schemes for women & SC/ST (Stand-Up India), and artisan tools (PM Vishwakarma). What is your enterprise trade?";
+      if (['hy', 'hello', 'hi', 'hey', 'namaste', 'kem cho', 'vanakkam'].some(w => q === w || q.startsWith(w + ' '))) {
+        replyEn = "Namaste! 🙏 Welcome to Vyapar Mitra AI. I can guide you on collateral-free loans (MUDRA, PM SVANidhi), up to 35% capital subsidies (PMEGP), affirmative schemes for women & SC/ST (Stand-Up India), and artisan toolkits (PM Vishwakarma). What is your enterprise trade?";
         replyHi = "नमस्ते! 🙏 व्यापार मित्र एआई में आपका स्वागत है। मैं आपको बिना गारंटी ऋण (मुद्रा, पीएम स्वनिधि), 35% तक सरकारी सब्सिडी (PMEGP), महिला व वंचित वर्ग योजनाएं (स्टैंड-अप इंडिया) और कारीगर सहायता (विश्वकर्मा योजना) की जानकारी दे सकता हूँ। आप किस कार्य के लिए सहायता चाहते हैं?";
         suggestedSchemes = ["pm-svanidhi", "mudra-yojana", "pmegp", "pm-vishwakarma"];
-        quickReplies = language === 'hi' 
+        quickReplies = language === 'hi'
           ? ['रेहड़ी-पटरी वालों के लिए ऋण', 'मुद्रा योजना में बिना गारंटी लोन', '35% PMEGP सब्सिडी', 'कारीगरों के लिए विश्वकर्मा योजना']
           : ['Loans without collateral', 'How to get 35% PMEGP subsidy?', 'Schemes for Women Entrepreneurs', 'PM SVANidhi for Street Vendors'];
       } else if (q.includes('mudra') || q.includes('मुद्रा') || q.includes('collateral') || q.includes('guarantee')) {
@@ -301,17 +377,20 @@ export const api = {
 
     try {
       const response = await client.get('/schemes/fetch-details', { params: { url, schemeId } });
-      const raw = response.data?.data || response.data || {};
-      return {
-        success: true,
-        source: raw.source || 'TinyFish Live Web Intelligence Engine',
-        fetchedAt: raw.fetchedAt || fallbackTimestamp,
-        status: raw.status || 'Active & Accepting Applications (FY 2026-27)',
-        portalTitle: raw.title || raw.portalTitle || 'Official Government Scheme Portal',
-        notices: (Array.isArray(raw.notices) && raw.notices.length > 0) ? raw.notices : standardNotices,
-        content: raw.content || '',
-        url: raw.url || url
-      };
+      if (response.data && typeof response.data === 'object') {
+        const raw = response.data?.data || response.data || {};
+        return {
+          success: true,
+          source: raw.source || 'TinyFish Live Web Intelligence Engine',
+          fetchedAt: raw.fetchedAt || fallbackTimestamp,
+          status: raw.status || 'Active & Accepting Applications (FY 2026-27)',
+          portalTitle: raw.title || raw.portalTitle || 'Official Government Scheme Portal',
+          notices: (Array.isArray(raw.notices) && raw.notices.length > 0) ? raw.notices : standardNotices,
+          content: raw.content || '',
+          url: raw.url || url
+        };
+      }
+      throw new Error('Invalid live fetch response');
     } catch (err) {
       console.warn('Backend live fetch endpoint unavailable, returning verified live bulletin snapshot:', err.message);
       return {

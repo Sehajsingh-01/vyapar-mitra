@@ -70,10 +70,12 @@ export default function Schemes() {
     setLoading(true);
     try {
       const res = await api.getSchemes();
-      // Attach default baseline scores if not matched yet
-      const list = (res.data || ALL_SCHEMES).map((s, idx) => ({
+      const rawList = Array.isArray(res?.data)
+        ? res.data
+        : (Array.isArray(res) ? res : ALL_SCHEMES);
+      const list = rawList.map((s, idx) => ({
         ...s,
-        matchScore: s.matchScore !== undefined ? s.matchScore : 90 - idx * 4
+        matchScore: s.matchScore !== undefined ? s.matchScore : Math.max(45, 94 - idx * 2)
       }));
       setAllSchemes(list);
     } catch (err) {

@@ -28,7 +28,7 @@ import { useLanguage } from '../hooks/useLanguage';
 import Button from '../components/Button';
 import Badge from '../components/Badge';
 import { SchemeDetailSkeleton } from '../components/LoadingSpinner';
-import { ALL_SCHEMES } from '../lib/constants';
+import { ALL_SCHEMES, findSchemeById } from '../lib/constants';
 import { api } from '../lib/api';
 
 // Robust helper to extract full bilingual eligibility points
@@ -121,10 +121,15 @@ export default function SchemeDetail() {
     setLoading(true);
     try {
       const res = await api.getSchemeById(id);
-      setScheme(res.data);
+      const schemeData = (res && typeof res.data === 'object' && res.data?.id) ? res.data : (res?.id ? res : null);
+      if (schemeData) {
+        setScheme(schemeData);
+      } else {
+        throw new Error('Invalid scheme payload from API');
+      }
     } catch (err) {
       console.warn('Fallback finding scheme in local registry:', err);
-      const found = ALL_SCHEMES.find((s) => s.id === id);
+      const found = findSchemeById(id);
       setScheme(found || null);
     } finally {
       setLoading(false);
