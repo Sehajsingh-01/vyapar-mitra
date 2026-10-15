@@ -1,0 +1,32 @@
+{
+  "name": "vyapar-mitra-backend",
+  "version": "1.0.0",
+  "description": "Vyapar Mitra - AI-Driven Scheme Matching Platform for Marginalized Entrepreneurs in India",
+  "type": "module",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test"
+  },
+  "keywords": [
+    "vyapar-mitra",
+    "sih2026",
+    "micro-entrepreneurs",
+    "government-schemes",
+    "ai-matching",
+    "tinyfish"
+  ],
+  "author": "HackIIITD 2026 - Problem Statement 26092",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
+  }
+}
