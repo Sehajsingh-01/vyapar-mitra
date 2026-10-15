@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Sparkles, Globe, Compass, Bot, ArrowRight } from 'lucide-react';
+import { Menu, X, Sparkles, Globe, Compass, Bot, ArrowRight, Calculator, FileCheck2 } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import Button from './Button';
 
@@ -14,6 +14,8 @@ export default function Navbar() {
     { name: t('nav_home'), path: '/', icon: null },
     { name: t('nav_find_schemes'), path: '/profile', icon: Sparkles },
     { name: t('nav_all_schemes'), path: '/schemes', icon: Compass },
+    { name: lang === 'hi' ? 'कैलकुलेटर' : 'Calculator', path: '/calculator', icon: Calculator },
+    { name: lang === 'hi' ? 'दस्तावेज जांच' : 'Doc Readiness', path: '/readiness', icon: FileCheck2 },
     { name: t('nav_assistant'), path: '/assistant', icon: Bot },
   ];
 
@@ -24,57 +26,77 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-nav">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-[1536px] mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex items-center justify-between h-16 sm:h-20">
           
           {/* Logo & Brand Identity */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-brand-950 flex items-center justify-center text-amber-400 font-bold shadow-md border border-brand-900 group-hover:scale-105 transition-transform duration-200">
-              <span className="font-heading text-lg tracking-wider">VM</span>
+          <Link to="/" className="flex items-center gap-2.5 group shrink-0 z-10">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-brand-950 flex items-center justify-center text-amber-400 font-bold shadow-md border border-brand-900 group-hover:scale-105 transition-transform duration-200">
+              <span className="font-heading text-base sm:text-lg tracking-wider">VM</span>
             </div>
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="text-xl font-extrabold text-brand-950 font-heading tracking-tight">
+                <span className="text-lg sm:text-xl font-extrabold text-brand-950 font-heading tracking-tight">
                   Vyapar<span className="text-amber-500 font-medium">Mitra</span>
                 </span>
                 <span className="inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
                   {lang === 'hi' ? 'व्यापार मित्र' : 'MSME AI'}
                 </span>
               </div>
-              <span className="hidden sm:block text-[11px] font-medium text-slate-500">
+              <span className="hidden xl:block text-[11px] font-medium text-slate-500">
                 {t('brand_tagline')}
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1.5 rounded-full border border-slate-200/80">
-            {navLinks.map((link) => {
-              const active = isActive(link.path);
-              const Icon = link.icon;
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`relative px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 flex items-center gap-1.5 ${
-                    active
-                      ? 'text-brand-950 bg-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
-                  }`}
-                >
-                  {Icon && <Icon className={`w-3.5 h-3.5 ${active ? 'text-amber-500' : 'text-slate-400'}`} />}
-                  <span>{link.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          {/* Desktop Navigation Links with Fluid Sliding Indicator (Centered Dead-Middle) */}
+          <div className="hidden lg:flex absolute left-1/2 -translate-x-1/2 items-center justify-center pointer-events-auto">
+            <nav className="flex items-center gap-0.5 xl:gap-1 bg-slate-100/90 p-1 rounded-full border border-slate-200/80 shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)]">
+              {navLinks.map((link) => {
+                const active = isActive(link.path);
+                const Icon = link.icon;
+                return (
+                  <Link
+                    key={link.path}
+                    to={link.path}
+                    className={`relative px-3 xl:px-3.5 py-1.5 rounded-full text-xs font-semibold transition-colors duration-200 flex items-center gap-1.5 whitespace-nowrap select-none ${
+                      active
+                        ? 'text-brand-950 font-bold'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {active && (
+                      <motion.div
+                        layoutId="navbar-active-pill"
+                        className="absolute inset-0 bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.06),0_1px_2px_rgba(0,0,0,0.04)] border border-slate-200/60"
+                        transition={{
+                          type: 'spring',
+                          stiffness: 420,
+                          damping: 32,
+                          mass: 0.8
+                        }}
+                      />
+                    )}
+                    {Icon && (
+                      <Icon
+                        className={`relative z-10 w-3.5 h-3.5 transition-colors duration-200 ${
+                          active ? 'text-amber-500' : 'text-slate-400 group-hover:text-slate-600'
+                        }`}
+                      />
+                    )}
+                    <span className="relative z-10">{link.name}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
 
           {/* Right Actions: Language Switcher & CTA */}
-          <div className="hidden sm:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 shrink-0 ml-auto z-10">
             {/* Language Toggle Button */}
             <button
               onClick={toggleLang}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-brand-950 transition-all shadow-subtle"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-semibold text-slate-700 hover:text-brand-950 transition-all shadow-subtle shrink-0"
               title="Toggle Hindi / English"
             >
               <Globe className="w-3.5 h-3.5 text-amber-500" />
@@ -82,12 +104,12 @@ export default function Navbar() {
             </button>
 
             {/* Check Eligibility CTA */}
-            <Link to="/profile">
+            <Link to="/profile" className="shrink-0">
               <Button
                 variant="primary"
                 size="sm"
                 iconRight={ArrowRight}
-                className="font-semibold"
+                className="font-semibold shadow-sm text-xs px-3.5 py-2"
               >
                 {t('nav_apply_now')}
               </Button>
@@ -95,7 +117,7 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu & Language Toggle Button */}
-          <div className="flex items-center gap-2 md:hidden">
+          <div className="flex items-center gap-2 lg:hidden ml-auto">
             <button
               onClick={toggleLang}
               className="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-bold text-brand-950"
@@ -120,7 +142,7 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-b border-slate-200 bg-white/95 backdrop-blur-lg px-4 pt-3 pb-6 space-y-3"
+            className="lg:hidden border-b border-slate-200 bg-white/95 backdrop-blur-lg px-4 pt-3 pb-6 space-y-3"
           >
             <div className="flex flex-col space-y-1">
               {navLinks.map((link) => {

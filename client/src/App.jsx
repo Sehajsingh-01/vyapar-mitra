@@ -10,6 +10,8 @@ import Profile from './pages/Profile';
 import Schemes from './pages/Schemes';
 import SchemeDetail from './pages/SchemeDetail';
 import Assistant from './pages/Assistant';
+import Calculator from './pages/Calculator';
+import DocumentReadiness from './pages/DocumentReadiness';
 import NotFound from './pages/NotFound';
 
 // Scroll to top helper
@@ -34,6 +36,8 @@ export default function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/schemes" element={<Schemes />} />
               <Route path="/schemes/:id" element={<SchemeDetail />} />
+              <Route path="/calculator" element={<Calculator />} />
+              <Route path="/readiness" element={<DocumentReadiness />} />
               <Route path="/assistant" element={<Assistant />} />
               {/* Fallback 404 */}
               <Route path="*" element={<NotFound />} />

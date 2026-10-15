@@ -12,7 +12,9 @@ import {
   Compass,
   ArrowUpRight,
   Building,
-  Coins
+  Coins,
+  Calculator,
+  FileCheck2
 } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage';
 import Button from '../components/Button';
@@ -159,6 +161,69 @@ export default function Landing() {
                 currentLang={lang}
               />
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* INTERACTIVE HACKATHON TOOLS HIGHLIGHT */}
+      <section className="py-12 bg-gradient-to-b from-slate-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            {/* Tool 1: Subsidy & EMI Calculator */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-card hover:shadow-xl transition-all relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center">
+                  <Calculator className="w-6 h-6" />
+                </div>
+                <Badge variant="saffron" size="sm">
+                  {lang === 'hi' ? '35% तक सरकारी सब्सिडी' : 'Up to 35% Capital Subsidy'}
+                </Badge>
+              </div>
+
+              <h3 className="text-xl font-extrabold text-brand-950 font-heading mb-2">
+                {lang === 'hi' ? 'सब्सिडी एवं ऋण ईएमआई सिमुलेटर' : 'Subsidy & Loan EMI Simulator'}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                {lang === 'hi'
+                  ? 'परियोजना लागत, सामाजिक श्रेणी और ग्रामीण/शहरी क्षेत्र के अनुसार गैर-वापसी योग्य सरकारी पूंजी अनुदान और मासिक बैंक EMI की लाइव गणना करें।'
+                  : 'Calculate non-refundable capital grants, promoter margin requirements, and net bank monthly EMIs across PMEGP, MUDRA, and Stand-Up India in real-time.'}
+              </p>
+
+              <Link to="/calculator" className="inline-flex items-center gap-2 text-xs font-bold text-amber-700 group-hover:text-amber-800">
+                <span>{lang === 'hi' ? 'सब्सिडी की गणना करें' : 'Simulate Your Subsidy Now'}</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
+            {/* Tool 2: Document Readiness Meter */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-card hover:shadow-xl transition-all relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl group-hover:scale-125 transition-transform" />
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center">
+                  <FileCheck2 className="w-6 h-6" />
+                </div>
+                <Badge variant="success" size="sm">
+                  {lang === 'hi' ? '7 वैधानिक दस्तावेज' : '7 Statutory Documents'}
+                </Badge>
+              </div>
+
+              <h3 className="text-xl font-extrabold text-brand-950 font-heading mb-2">
+                {lang === 'hi' ? 'दस्तावेज तैयारी एवं पात्रता मीटर' : 'Document Readiness & Audit Meter'}
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                {lang === 'hi'
+                  ? 'बैंक जाने से पहले आधार, पैन, उद्यम पंजीकरण, जाति प्रमाण पत्र और डीपीआर रिपोर्ट की जांच करें ताकि आवेदन कभी निरस्त न हो।'
+                  : 'Prevent loan rejection. Audit your Aadhaar linkage, Udyam certificate, caste credentials, and project DPR report before applying to banks.'}
+              </p>
+
+              <Link to="/readiness" className="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 group-hover:text-emerald-800">
+                <span>{lang === 'hi' ? 'दस्तावेज पात्रता जांचें' : 'Audit My Document Readiness'}</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+
           </div>
         </div>
       </section>

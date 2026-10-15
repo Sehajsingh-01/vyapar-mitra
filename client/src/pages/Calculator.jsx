@@ -224,15 +224,22 @@ export default function Calculator() {
                 key={p.id}
                 type="button"
                 onClick={() => handleSchemeChange(p.id)}
-                className={`px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 border ${
+                className={`relative px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors duration-200 flex items-center gap-2 border select-none ${
                   isSelected
-                    ? 'bg-brand-950 text-white border-brand-950 shadow-md scale-[1.02]'
+                    ? 'text-white border-brand-950 shadow-md'
                     : 'bg-white text-slate-700 border-slate-200/90 hover:border-slate-300 hover:bg-slate-50'
                 }`}
               >
-                <span>{isHi ? p.nameHi : p.name}</span>
+                {isSelected && (
+                  <motion.div
+                    layoutId="calc-active-preset"
+                    className="absolute inset-0 bg-brand-950 rounded-2xl"
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  />
+                )}
+                <span className="relative z-10">{isHi ? p.nameHi : p.name}</span>
                 {p.id === 'pmegp' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400 text-brand-950 font-extrabold">
+                  <span className="relative z-10 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-400 text-brand-950 font-extrabold">
                     Up to 35% Free
                   </span>
                 )}
